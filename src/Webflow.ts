@@ -59,14 +59,28 @@ export type IFetchOptions = {
   mode: string,
   body?: string
 };
+export type IQueryParams = Record<string, any>;
+
+export type IForSite = {
+  siteId: string,
+};
+export type IForWebhook = IForSite & {
+  webhookId: string,
+};
+export type IForCollection = {
+  collectionId: string,
+};
+export type IForCollectionItem = IForCollection & {
+  itemId: string,
+};
 
 export default class Webflow {
   
   responseWrapper: ResponseWrapper;
-  endpoint
-  token
+  endpoint: string;
+  token: string;
   headers: Record<string, string>
-  authenticatedFetch: (method: HTTP_METHOD, path: string, data?: any, query?: Record<string, any>) => Promise<any>;
+  authenticatedFetch: (method: HTTP_METHOD, path: string, data?: any, query?: IQueryParams) => Promise<any>;
   
   
   constructor({
@@ -111,39 +125,39 @@ export default class Webflow {
 
   // Generic HTTP request handlers
 
-  get(path, query = {}) {
+  get(path: string, query: IQueryParams = {}) {
     return this.authenticatedFetch('GET', path, false, query);
   }
 
-  post(path, data, query = {}) {
+  post(path: string, data, query: IQueryParams = {}) {
     return this.authenticatedFetch('POST', path, data, query);
   }
 
-  put(path, data, query = {}) {
+  put(path: string, data, query: IQueryParams = {}) {
     return this.authenticatedFetch('PUT', path, data, query);
   }
 
-  patch(path, data, query = {}) {
+  patch(path: string, data, query: IQueryParams = {}) {
     return this.authenticatedFetch('PATCH', path, data, query);
   }
 
-  delete(path, query = {}) {
+  delete(path: string, query: IQueryParams = {}) {
     return this.authenticatedFetch('DELETE', path, query);
   }
 
   // Meta
 
-  info(query = {}) {
+  info(query: IQueryParams = {}) {
     return this.get('/info', query);
   }
 
   // Sites
 
-  sites(query = {}) {
+  sites(query: IQueryParams = {}) {
     return this.get('/sites', query).then(sites => sites.map(site => this.responseWrapper.site(site)));
   }
 
-  site({ siteId }, query = {}) {
+  site<T extends IForSite>({ siteId }: T, query: IQueryParams = {}) {
     if (!siteId) return Promise.reject(buildRequiredArgError('siteId'));
 
     return this.get(`/sites/${siteId}`, query).then(site => this.responseWrapper.site(site));
@@ -158,7 +172,7 @@ export default class Webflow {
 
   // Domains
 
-  domains({ siteId }) {
+  domains<T extends IForSite>({ siteId }: T) {
     if (!siteId) return Promise.reject(buildRequiredArgError('siteId'));
 
     return this.get(`/sites/${siteId}/domains`).then(
@@ -168,7 +182,7 @@ export default class Webflow {
 
   // Collections
 
-  collections({ siteId }, query = {}) {
+  collections<T extends IForSite>({ siteId }: T, query: IQueryParams = {}) {
     if (!siteId) return Promise.reject(buildRequiredArgError('siteId'));
 
     return this.get(`/sites/${siteId}/collections`, query).then(
@@ -176,7 +190,7 @@ export default class Webflow {
     );
   }
 
-  collection({ collectionId }, query = {}) {
+  collection<T extends IForCollection>({ collectionId }: T, query: IQueryParams = {}) {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
 
     return this.get(`/collections/${collectionId}`, query).then(
@@ -186,7 +200,7 @@ export default class Webflow {
 
   // Items
 
-  items({ collectionId }, query = {}) {
+  items<T extends IForCollection>({ collectionId }: T, query: IQueryParams = {}) {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
 
     return this.get(`/collections/${collectionId}/items`, query).then(
@@ -198,16 +212,16 @@ export default class Webflow {
     );
   }
 
-  item({ collectionId, itemId }, query = {}) {
+  item<T extends IForCollectionItem>({ collectionId, itemId }: T, query: IQueryParams = {}) {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
-    if (!itemId) return Promise.reject(buildRequiredArgError('siteId'));
+    if (!itemId) return Promise.reject(buildRequiredArgError('itemId'));
 
     return this.get(`/collections/${collectionId}/items/${itemId}`, query).then(
       res => this.responseWrapper.item(res.items[0], collectionId),
     );
   }
 
-  createItem({ collectionId, ...data }, query = {}) {
+  createItem<T extends IForCollection>({ collectionId, ...data }: T, query: IQueryParams = {}) {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
 
     return this.post(`/collections/${collectionId}/items`, data, query).then(
@@ -215,21 +229,21 @@ export default class Webflow {
     );
   }
 
-  updateItem({ collectionId, itemId, ...data }, query = {}) {
+  updateItem<T extends IForCollectionItem>({ collectionId, itemId, ...data }: T, query: IQueryParams = {}) {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
     if (!itemId) return Promise.reject(buildRequiredArgError('itemId'));
 
     return this.put(`/collections/${collectionId}/items/${itemId}`, data, query);
   }
 
-  removeItem({ collectionId, itemId }, query = {}) {
+  removeItem<T extends IForCollectionItem>({ collectionId, itemId }: T, query: IQueryParams = {}) {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
     if (!itemId) return Promise.reject(buildRequiredArgError('itemId'));
 
     return this.delete(`/collections/${collectionId}/items/${itemId}`, query);
   }
 
-  patchItem({ collectionId, itemId, ...data }, query = {}) {
+  patchItem<T extends IForCollectionItem>({ collectionId, itemId, ...data }: T, query: IQueryParams = {}) {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
     if (!itemId) return Promise.reject(buildRequiredArgError('itemId'));
 
@@ -242,7 +256,7 @@ export default class Webflow {
 
   // Webhooks
 
-  webhooks({ siteId }, query = {}) {
+  webhooks<T extends IForSite>({ siteId }: T, query: IQueryParams = {}) {
     if (!siteId) return Promise.reject(buildRequiredArgError('siteId'));
 
     return this.get(`/sites/${siteId}/webhooks`, query).then(
@@ -250,7 +264,7 @@ export default class Webflow {
     );
   }
 
-  webhook({ siteId, webhookId }, query = {}) {
+  webhook<T extends IForWebhook>({ siteId, webhookId }: T, query: IQueryParams = {}) {
     if (!siteId) return Promise.reject(buildRequiredArgError('siteId'));
     if (!webhookId) return Promise.reject(buildRequiredArgError('webhookId'));
 
@@ -259,7 +273,7 @@ export default class Webflow {
     );
   }
 
-  createWebhook({ siteId, ...data }, query = {}) {
+  createWebhook<T extends IForSite>({ siteId, ...data }: T, query: IQueryParams = {}) {
     if (!siteId) return Promise.reject(buildRequiredArgError('siteId'));
 
     return this.post(`/sites/${siteId}/webhooks`, data, query).then(
@@ -267,7 +281,7 @@ export default class Webflow {
     );
   }
 
-  removeWebhook({ siteId, webhookId }, query = {}) {
+  removeWebhook<T extends IForWebhook>({ siteId, webhookId }: T, query: IQueryParams = {}) {
     if (!siteId) return Promise.reject(buildRequiredArgError('siteId'));
     if (!webhookId) return Promise.reject(buildRequiredArgError('webhookId'));
 

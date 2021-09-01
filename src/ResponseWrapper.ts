@@ -62,6 +62,9 @@ export default class ResponseWrapper {
       update(first, ...rest) {
         return this.api.updateItem({ ...first, collectionId, itemId: item._id }, ...rest);
       },
+      patch(first, ...rest) {
+        return this.api.patchItem({ ...first, collectionId, itemId: item._id }, ...rest);
+      },
       remove: this.api.updateItem.bind(this.api, { collectionId, itemId: item._id }),
     };
   }

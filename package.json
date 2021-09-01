@@ -45,7 +45,7 @@
     "isomorphic-fetch": "^3.0.0",
     "qs": "^6.3.0"
   },
-  "xava": {
+  "ava": {
     "require": [
       "babel-register"
     ],
