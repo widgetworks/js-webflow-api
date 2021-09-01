@@ -26,7 +26,7 @@ const responseHandler = res =>
       Promise.reject(new WebflowError(err)))
     .then((body) => {
       if (res.status >= 400) {
-        const errOpts = {
+        const errOpts: Record<string, any> = {
           code: body.code,
           msg: body.msg,
           _meta: buildMeta(res),
@@ -47,12 +47,33 @@ const responseHandler = res =>
       return body;
     });
 
+export type IWebflowOptions = {
+  endpoint?: string,
+  token?: string,
+  version?: string,
+};
+export type HTTP_METHOD = 'DELETE' | 'GET' | 'HEAD' | 'OPTIONS' | 'POST' | 'PUT' | 'PATCH';
+export type IFetchOptions = {
+  method: HTTP_METHOD,
+  headers: Record<string, string>,
+  mode: string,
+  body?: string
+};
+
 export default class Webflow {
+  
+  responseWrapper: ResponseWrapper;
+  endpoint
+  token
+  headers: Record<string, string>
+  authenticatedFetch: (method: HTTP_METHOD, path: string, data?: any, query?: Record<string, any>) => Promise<any>;
+  
+  
   constructor({
     endpoint = DEFAULT_ENDPOINT,
-    token,
+    token = '',
     version = '1.0.0',
-  } = {}) {
+  }: IWebflowOptions = {}) {
     if (!token) throw buildRequiredArgError('token');
 
     this.responseWrapper = new ResponseWrapper(this);
@@ -67,13 +88,13 @@ export default class Webflow {
       'Content-Type': 'application/json',
     };
 
-    this.authenticatedFetch = (method, path, data, query) => {
+    this.authenticatedFetch = (method: HTTP_METHOD, path: string, data?: any, query?: Record<string, any>) => {
       const queryString = query && !isObjectEmpty(query)
         ? `?${qs.stringify(query)}`
         : '';
 
       const uri = `${this.endpoint}${path}${queryString}`;
-      const opts = {
+      const opts: IFetchOptions = {
         method,
         headers: this.headers,
         mode: 'cors',
@@ -141,7 +162,7 @@ export default class Webflow {
     if (!siteId) return Promise.reject(buildRequiredArgError('siteId'));
 
     return this.get(`/sites/${siteId}/domains`).then(
-      domains => domains.map(domain => this.responseWrapper.domain(domain, siteId)),
+      domains => domains.map(domain => this.responseWrapper.domain(domain)),
     );
   }
 

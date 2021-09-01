@@ -1,5 +1,9 @@
+import type Webflow from './Webflow';
+
 export default class ResponseWrapper {
-  constructor(api) {
+  api: Webflow;
+  
+  constructor(api: Webflow) {
     this.api = api;
   }
 
@@ -51,7 +55,7 @@ export default class ResponseWrapper {
     };
   }
 
-  item(item, collectionId) {
+  item(item, collectionId: string) {
     return {
       ...item,
 
@@ -62,7 +66,7 @@ export default class ResponseWrapper {
     };
   }
 
-  webhook(webhook, siteId) {
+  webhook(webhook, siteId: string) {
     return {
       ...webhook,
 
