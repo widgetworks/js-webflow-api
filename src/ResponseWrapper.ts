@@ -1,4 +1,4 @@
-import type Webflow from './Webflow';
+import type { Webflow } from './Webflow';
 
 export default class ResponseWrapper {
   api: Webflow;

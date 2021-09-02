@@ -4,6 +4,9 @@ import qs from 'qs';
 import { isObjectEmpty } from './utils';
 import ResponseWrapper from './ResponseWrapper';
 import WebflowError, { buildRequiredArgError } from './WebflowError';
+import {IApiItem, IForCollection, IForCollectionItem, IForSite, IForWebhook, IQueryParams,
+  IWebflowAugmentedItem,
+  IWebflowCollectionItemRemoveResponse, IWebflowCollectionItemResponse } from './types';
 
 const DEFAULT_ENDPOINT = 'https://api.webflow.com';
 
@@ -59,29 +62,14 @@ export type IFetchOptions = {
   mode: string,
   body?: string
 };
-export type IQueryParams = Record<string, any>;
 
-export type IForSite = {
-  siteId: string,
-};
-export type IForWebhook = IForSite & {
-  webhookId: string,
-};
-export type IForCollection = {
-  collectionId: string,
-};
-export type IForCollectionItem = IForCollection & {
-  itemId: string,
-};
 
-export default class Webflow {
+export class Webflow {
   
   responseWrapper: ResponseWrapper;
   endpoint: string;
   token: string;
   headers: Record<string, string>
-  authenticatedFetch: (method: HTTP_METHOD, path: string, data?: any, query?: IQueryParams) => Promise<any>;
-  
   
   constructor({
     endpoint = DEFAULT_ENDPOINT,
@@ -101,27 +89,27 @@ export default class Webflow {
       'accept-version': version,
       'Content-Type': 'application/json',
     };
-
-    this.authenticatedFetch = (method: HTTP_METHOD, path: string, data?: any, query?: Record<string, any>) => {
-      const queryString = query && !isObjectEmpty(query)
+  }
+  
+  authenticatedFetch = (method: HTTP_METHOD, path: string, data?: any, query?: Record<string, any>) => {
+    const queryString = query && !isObjectEmpty(query)
         ? `?${qs.stringify(query)}`
         : '';
-
-      const uri = `${this.endpoint}${path}${queryString}`;
-      const opts: IFetchOptions = {
-        method,
-        headers: this.headers,
-        mode: 'cors',
-      };
-
-      if (data) {
-        opts.body = JSON.stringify(data);
-      }
-
-      return fetch(uri, opts)
-        .then(responseHandler);
+    
+    const uri = `${this.endpoint}${path}${queryString}`;
+    const opts: IFetchOptions = {
+      method,
+      headers: this.headers,
+      mode: 'cors',
     };
-  }
+    
+    if (data) {
+      opts.body = JSON.stringify(data);
+    }
+    
+    return fetch(uri, opts)
+        .then(responseHandler);
+  };
 
   // Generic HTTP request handlers
 
@@ -190,7 +178,7 @@ export default class Webflow {
     );
   }
 
-  collection<T extends IForCollection>({ collectionId }: T, query: IQueryParams = {}) {
+  collection<R = any, T extends IForCollection = IForCollection>({ collectionId }: T, query: IQueryParams = {}) {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
 
     return this.get(`/collections/${collectionId}`, query).then(
@@ -200,7 +188,7 @@ export default class Webflow {
 
   // Items
 
-  items<T extends IForCollection>({ collectionId }: T, query: IQueryParams = {}) {
+  items<R = any, T extends IForCollection = IForCollection>({ collectionId }: T, query: IQueryParams = {}): Promise< IWebflowCollectionItemResponse< IWebflowAugmentedItem<R> > > {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
 
     return this.get(`/collections/${collectionId}/items`, query).then(
@@ -212,7 +200,7 @@ export default class Webflow {
     );
   }
 
-  item<T extends IForCollectionItem>({ collectionId, itemId }: T, query: IQueryParams = {}) {
+  item<R = any, T extends IForCollectionItem = IForCollectionItem>({ collectionId, itemId }: T, query: IQueryParams = {}): Promise< IWebflowAugmentedItem<R> > {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
     if (!itemId) return Promise.reject(buildRequiredArgError('itemId'));
 
@@ -221,7 +209,7 @@ export default class Webflow {
     );
   }
 
-  createItem<T extends IForCollection>({ collectionId, ...data }: T, query: IQueryParams = {}) {
+  createItem<R = any, T extends IForCollection = IForCollection & Partial<R>>({ collectionId, ...data }: T, query: IQueryParams = {}): Promise< IWebflowAugmentedItem<R> > {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
 
     return this.post(`/collections/${collectionId}/items`, data, query).then(
@@ -229,21 +217,21 @@ export default class Webflow {
     );
   }
 
-  updateItem<T extends IForCollectionItem>({ collectionId, itemId, ...data }: T, query: IQueryParams = {}) {
+  updateItem<R = any, T extends IForCollectionItem = IForCollectionItem & Partial<R>>({ collectionId, itemId, ...data }: T, query: IQueryParams = {}): Promise< R > {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
     if (!itemId) return Promise.reject(buildRequiredArgError('itemId'));
 
     return this.put(`/collections/${collectionId}/items/${itemId}`, data, query);
   }
 
-  removeItem<T extends IForCollectionItem>({ collectionId, itemId }: T, query: IQueryParams = {}) {
+  removeItem<T extends IForCollectionItem = IForCollectionItem>({ collectionId, itemId }: T, query: IQueryParams = {}): Promise< IWebflowCollectionItemRemoveResponse > {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
     if (!itemId) return Promise.reject(buildRequiredArgError('itemId'));
 
     return this.delete(`/collections/${collectionId}/items/${itemId}`, query);
   }
 
-  patchItem<T extends IForCollectionItem>({ collectionId, itemId, ...data }: T, query: IQueryParams = {}) {
+  patchItem<R = any, T extends IForCollectionItem = IForCollectionItem & Partial<R>>({ collectionId, itemId, ...data }: T, query: IQueryParams = {}): Promise< R > {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
     if (!itemId) return Promise.reject(buildRequiredArgError('itemId'));
 
