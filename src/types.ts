@@ -10,6 +10,12 @@ export type IForCollection = {
 export type IForCollectionItem = IForCollection & {
   itemId: string,
 };
+export type IWithFields<T> = {
+  fields: T,
+};
+export type IWithFieldsPartial<T> = {
+  fields: Partial<T>,
+};
 
 export type IQueryParams = Record<string, any>;
 

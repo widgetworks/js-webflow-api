@@ -6,7 +6,7 @@ import ResponseWrapper from './ResponseWrapper';
 import WebflowError, { buildRequiredArgError } from './WebflowError';
 import {IApiItem, IForCollection, IForCollectionItem, IForSite, IForWebhook, IQueryParams,
   IWebflowAugmentedItem,
-  IWebflowCollectionItemRemoveResponse, IWebflowCollectionItemResponse } from './types';
+  IWebflowCollectionItemRemoveResponse, IWebflowCollectionItemResponse, IWithFields, IWithFieldsPartial } from './types';
 
 const DEFAULT_ENDPOINT = 'https://api.webflow.com';
 
@@ -209,7 +209,10 @@ export class Webflow {
     );
   }
 
-  createItem<R = any, T extends IForCollection = IForCollection & Partial<R>>({ collectionId, ...data }: T, query: IQueryParams = {}): Promise< IWebflowAugmentedItem<R> > {
+  createItem<
+    R = any,
+    T extends IForCollection & IWithFields<R> = IForCollection & IWithFields<R>
+  >({ collectionId, ...data }: T, query: IQueryParams = {}): Promise< IWebflowAugmentedItem<R> > {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
 
     return this.post(`/collections/${collectionId}/items`, data, query).then(
@@ -217,21 +220,31 @@ export class Webflow {
     );
   }
 
-  updateItem<R = any, T extends IForCollectionItem = IForCollectionItem & Partial<R>>({ collectionId, itemId, ...data }: T, query: IQueryParams = {}): Promise< R > {
+  updateItem<
+    R = any,
+    T extends IForCollectionItem & IWithFields<R> = IForCollectionItem & IWithFields<R>
+  >({ collectionId, itemId, ...data }: T, query: IQueryParams = {}): Promise< R > {
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
     if (!itemId) return Promise.reject(buildRequiredArgError('itemId'));
 
     return this.put(`/collections/${collectionId}/items/${itemId}`, data, query);
   }
 
-  removeItem<T extends IForCollectionItem = IForCollectionItem>({ collectionId, itemId }: T, query: IQueryParams = {}): Promise< IWebflowCollectionItemRemoveResponse > {
+  removeItem<
+    T extends IForCollectionItem = IForCollectionItem
+  >({ collectionId, itemId }: T, query: IQueryParams = {}): Promise< IWebflowCollectionItemRemoveResponse > {
+    
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
     if (!itemId) return Promise.reject(buildRequiredArgError('itemId'));
 
     return this.delete(`/collections/${collectionId}/items/${itemId}`, query);
   }
 
-  patchItem<R = any, T extends IForCollectionItem = IForCollectionItem & Partial<R>>({ collectionId, itemId, ...data }: T, query: IQueryParams = {}): Promise< R > {
+  patchItem<
+    R = any,
+    T extends IForCollectionItem & IWithFieldsPartial<R> = IForCollectionItem & IWithFieldsPartial<R>
+  >({ collectionId, itemId, ...data }: T, query: IQueryParams = {}): Promise< R > {
+    
     if (!collectionId) return Promise.reject(buildRequiredArgError('collectionId'));
     if (!itemId) return Promise.reject(buildRequiredArgError('itemId'));
 
